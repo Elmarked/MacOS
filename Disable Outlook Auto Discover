@@ -1,0 +1,15 @@
+#Pre-Req Exchange server to be set to https://webmail.auspost.com.au
+tell application "Microsoft Outlook"
+  set background autodiscover of exchange account 1 to false
+end tell
+
+#Check Status of Autodiscover
+tell application "Microsoft Outlook"
+  get background autodiscover of exchange account 1
+end tell
+
+#Note: target account can be designated by position in Accounts pane or by email address
+set background autodiscover of exchange account 1 to false
+  or
+set background autodiscover of exchange account “first.last@auspost.com.au” to false 
+end tell
