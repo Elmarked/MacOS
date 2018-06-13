@@ -1,0 +1,109 @@
+#!/bin/sh
+#mv ~/new-defaults.txt ~/old-defaults.txt
+#defaults read > ~/new-defaults.txt
+#diff old-defaults.txt new-defaults.txt
+
+#!/bin/bash
+
+##########################################################################################################
+#Variable Config
+
+#uses the device serial number to populate the hostname
+HOSTNAME= system_profiler SPHardwareDataType | grep 'Serial Number (system)' | awk '{print $NF}'
+Time
+
+#sets the timeszone (obviously not this one)
+TIMEZONE="America/Chicago" # 'systemsetup -listtimezones'
+
+##########################################################################################################
+
+# MAIN
+
+echo "This script will set custom default properties on MacOS"
+
+echo " Ask for the administrator password for the duration of this script"
+sudo -v
+
+echo " Keep-alive: update existing sudo time stamp until .osx has finished"
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+#set HOSTNAME correctly
+echo " Set computer name to $HOSTNAME (as done via System Preferences → Sharing)"
+sudo scutil --set ComputerName $HOSTNAME
+sudo scutil --set HostName $HOSTNAME
+sudo scutil --set LocalHostName $HOSTNAME
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string $HOSTNAME
+
+echo " Show IP address, hostname, OS version when clicking the clock in the login window"
+sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+
+echo " Trackpad: enable tap to click for this user and for the login screen"
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+
+echo " Set the timezone to $TIMEZONE"
+systemsetup -settimezone $TIMEZONE > /dev/null
+
+#prevent auto login
+Echo "Disabling Auto Login"
+defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser
+
+#disable guest access
+Echo "Disabling Guest Account Access"
+defaults write /Library/Preferences/com.apple.AppleFileServer guestAccess -bool NO
+
+#remove "allow guest access"
+Echo "Removing Guest Account Access"
+defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess -bool NO
+
+#enable firewall
+Echo "Enabling Firewall"
+defaults write /Library/Preferences/com.apple.alf globalstate -int 1
+
+#unload the firewall service
+Echo "Stopping Firewall Service"
+launchctl unload /System/Library/LaunchDaemons/com.apple.alf.agent.plist
+
+Echo "Restarting Firewall Service
+#reload the firewall service to apply the change
+launchctl load /System/Library/LaunchDaemons/com.apple.alf.agent.plist
+
+#change screen saver tiemout to 5 minutes
+Echo "Changing Screensaver Timeout"
+defaults -currentHost write com.apple.screensaver idleTime 300
+
+#require password immediately after screensaver
+Echo "Changing password requirement for screensaver"
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+#set hot corner to bottom right corner
+Echo "Creating Hotspot in Bottom Right Corner"
+defaults write /Users/$user/Library/Preferences/com.apple.dock.plist wvous-br-corner -int 5
+
+#set screensaver to start in hot corner
+Echo "Setting Hot Spot to Trigger Screensaver"
+defaults write /Users/$user/Library/Preferences/com.apple.dock.plist wvous-br-modifier -int 0
+
+echo " Enable SSH "
+sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist
+
+echo " Enable VNC "
+#sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -access -on -clientopts -setvnclegacy -vnclegacy yes -clientopts -setvncpw -vncpw PutYourOwnPasswordHere -restart -agent -privs -all
+
+#sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain <certificate>
+
+echo "Copying Plist file for SAP"
+cp <source destination> 
+cp ~/Library/Preferences
+
+###########################################
+echo "Done.  Restart computer to see all changes"
+
+###########################################
+
+
+
+
+
